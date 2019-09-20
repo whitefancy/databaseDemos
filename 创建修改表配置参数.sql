@@ -4,17 +4,29 @@ create table if not exists book
     图书编号 char(10) not null primary key ,
     图书类别 varchar(20) not null default '未知',
     单价 float(10) not null ,
-    数量 int(2),
+    数量 smallint,
     封面图片 blob
 
 )engine =InnoDB;
 
+create table if not exists sell
+(
+    图书编号 char(10) not null  ,
+    订单号 varchar(20) not null default '未知',
+    单价 float(10) ,
+    数量 smallint,
+    订购者 char(10)
 
- -- 创建取消索引更改表评注和表类型
+)engine =InnoDB;
+ -- 修改表的存储引擎
+ALTER TABLE  book ENGINE =INNODB;
 
 -- 增加列
 Alter table book
 add column 作者 char(10) null;
+
+Alter table sell
+    add column 是否发货 char(10) null;
 
 Alter table book
     add column 作者1 char(10) null,
@@ -60,3 +72,9 @@ show tables;
 desc book;
 describe book1;
 describe book1 图书编号;
+
+-- 查看表的所有信息
+SHOW CREATE TABLE student3;
+
+-- 删除表
+drop table library.book_copy2;
