@@ -1,0 +1,77 @@
+MongoDB文档格式 BSON binary Json
+例如，
+嵌入
+好处，利用数据局部性，磁盘旋转多，寻道少
+手机通讯录
+{
+"id":3,
+"name":"Jenny",
+"zip_code":"01209",
+"numbers":["555-333-2345","555-333-2115"]
+}
+
+局部性嵌入
+引用
+Mongo没有JOIN功能，所以要执行多次查找
+联系人文档
+{
+"id":3,
+"name":"Jenny",
+"zip_code":"01209"
+}
+电话号码文档
+{"contact_id":3,"number":"555-333-2345"}
+{"contact_id":3,"number":"555-333-2115"}
+
+contact_info = db.contacts.findOne({"id":3})
+number_info = list(db.numbers.find({"contact_id":3}));
+
+原子性和独立性嵌入
+MongoDB在设计上没有多文档事务
+删除
+db.contacts.delete({"id":3})
+db.numbers.delete({"contact_id":3})
+嵌入模式删除
+db.contact_numbers.delete({"id":3})
+为了从底层设计上考虑如何简单地扩展到分布的多台服务器上，
+最大的两个问题是分布式join操作和分布式事务
+很难实现而且会导致极大的性能下降
+所以不支持join和多文档事务
+Mongo可以实现自动的分片解决方案，该方案比join和事务由更好的扩展性和性能.
+有趣的是，很多关系型数据库放松了事务之间必须完全隔离的需求，引入多个隔离级别。
+如果将升级操作构建为只针对单个文档的更新，可以获得序列化的隔离级别的优势，
+不会像关系型数据库那样有性能上的损失。
+
+
+为了灵活性采用引用
+考虑到将用户的数据模型标准化到多个容器，会提升查询的灵活性。
+例如在博客型应用程序，嵌入式的主要缺点是用户请求的数据远远大于实际需要的数据量。
+嵌入模式的发帖评论
+{
+"_id":"Second Post",
+"author":"Rick",
+"text":"This is my first post",
+"comments":[
+    {"author":"Staurt","text":"Nice post!"},
+    {"author":"Ellie","text":"hello!"}
+    ]
+}
+查询评论
+ db.posts.find({"comments.author":"Staurt"},
+ {"comments":1});
+ 然而使用标准化的模式
+ //db.posts模式
+ {
+ "_id":"First Post",
+ "author":"Rick",
+ "text":"This is my first post"
+ }
+ //db.comments模式
+ {
+ "_id":ObjectId(...),
+ "post_id":"First Post",
+ "author":"Staurt",
+ "text":"Nice post!"
+ }
+ 查询评论
+ db.comments.find({"author":"Staurt"});

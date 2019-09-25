@@ -1,0 +1,25 @@
+docker search mongo
+
+docker pull mongo
+
+docker run  \
+--name mongodb_server \
+-p 27017:27017  \
+-v /software/mongodb/configdb:/data/configdb/ \
+-v /software/mongodb/db/:/data/db/ \
+-d mongo --auth
+
+以 admin 用户身份进入mongo ：
+docker exec -it  eaebf0fd868b  mongo admin
+创建一个 admin 管理员账号：
+db.createUser({ user: 'admin', pwd: '123456', roles: [ { role: "userAdminAnyDatabase", db: "admin" } ] });
+对 admin 用户 进行身份认证：
+db.auth("admin","123456");
+退出：
+exit
+
+创建 用户、密码和数据库：
+db.createUser({ user: 'swen', pwd: 'swen123456', roles: [ { role: "readWrite", db: "app" } ] });
+
+连接
+4选该按钮不能选Default不然测试链接会不成功，

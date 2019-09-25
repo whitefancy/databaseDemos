@@ -1,0 +1,50 @@
+切换数据库：
+use app
+
+添加数据：
+db.test.save({name:"zhangsan"});
+
+db.contact_numbers.save({
+             "id":3,
+             "name":"Jenny",
+             "zip_code":"01209"
+             });
+
+db.contacts.save({
+                  "id":3,
+                  "name":"Jenny",
+                  "zip_code":"01209"
+                  });
+
+db.numbers.save({"contact_id":3,"number":"555-333-2345"});
+db.posts.save({
+              "_id":"Second Post",
+              "author":"Rick",
+              "text":"This is my first post",
+              "comments":[
+                  {"author":"Staurt","text":"Nice post!"},
+                  {"author":"Ellie","text":"hello!"}
+                  ]
+              });
+db.posts.save(
+ {
+ "_id":"First Post",
+ "author":"Rick",
+ "text":"This is my first post"
+ });
+ db.comments.save(
+  {
+  "_id":ObjectId(...),
+  "post_id":"First Post",
+  "author":"Staurt",
+  "text":"Nice post!"
+  });
+删除数据
+db.contacts.remove({"id":3});
+db.numbers.remove({"contact_id":3});
+
+查找数据
+ db.contacts.findOne({"id":3});
+ db.numbers.find({"contact_id":3});
+ db.posts.find({"comments.author":"Stuart"},
+ {"comments":1});
