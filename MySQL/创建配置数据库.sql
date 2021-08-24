@@ -815,6 +815,17 @@ AND B.State = 1
 INNER JOIN C
 ON B.ID = C.ID
 
+SELECT `game_order_id`,`server_id`, `uid`,  `product_id`,  `order`.`channel`, `channel_uid`,`order_id`,
+                `order`.`money`, `order`.`currency`, `deliver_status`,  from_unixtime(`deliver_time`) as `deliver`,
+                `extra`, from_unixtime(`create_time`) as `create` FROM `orders` 
+                JOIN `order` ON orders.id=REPLACE(`order`.game_order_id,'inner_','') WHERE `order`.`order_id` not like 'dummy%';
+								
+								
+						
+SELECT SUM(`order`.`money`),  `uid`, `server_id` FROM `orders` 
+                JOIN `order` ON orders.id=REPLACE(`order`.game_order_id,'inner_','') WHERE `order`.`order_id` not like 'dummy%'
+								GROUP BY `server_id`, `uid`;
+
 删除
 drop
 命令格式：drop table tb ---tb表示数据表的名字,下同。
@@ -1282,3 +1293,21 @@ DO CALL pro_clear_data();
 ALTER EVENT event_time_clear_data ON COMPLETION PRESERVE ENABLE;
 ALTER EVENT event_time_clear_data ON COMPLETION PRESERVE DISABLE;  
 
+-- 字符串相关查询
+SELECT pay_id,zptransid,FROM_UNIXTIME(ts_order),FROM_UNIXTIME(ts_payed) from user_order WHERE pay_id like '200908%';
+
+SELECT left(pay_id,6),count(*) from user_order WHERE ts_payed>0 GROUP BY left(pay_id,6);
+
+
+SELECT `game_order_id`,`server_id`, `uid`,  `product_id`,  `order`.`channel`, `channel_uid`,`order_id`,
+                `order`.`money`, `order`.`currency`, `deliver_status`,  from_unixtime(`deliver_time`) as `deliver`,
+                `extra`, from_unixtime(`create_time`) as `create` FROM `orders` 
+                JOIN `order` ON orders.id=REPLACE(`order`.game_order_id,'p31prod_','') WHERE `uid`=101153;
+								
+								
+						
+SELECT SUM(`order`.`money`)/100 as `累计付费金额（元）`,  `uid`, `server_id`,`order`.`channel` FROM `orders` 
+                JOIN `order` ON orders.id=REPLACE(`order`.game_order_id,'p31prod_','') and `deliver_status`=1 WHERE `order`.`order_id` not like 'dummy%'
+								GROUP BY `order`.`channel`,`server_id`, `uid`;
+								
+								
