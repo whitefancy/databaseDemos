@@ -1,33 +1,11 @@
+-- 主题：增
+
 -- 新建表
 CREATE DATABASE IF NOT EXISTS company;
 
 CREATE SCHEMA PETSTORE;
 -- 指定字符集与校对规则
 CREATE DATABASE IF NOT EXISTS yggl character set gb2312 collate gb2312_chinese_ci;
-
--- 查看数据库
-show DATABASES;
-
--- 查看字符集和默认校对规则
-show character set;
-
--- 查看版本
--- mysql –V
--- mysql
-SHOW VARIABLES LIKE '%version%';
-SELECT VERSION();
-
-
--- 打开数据库
-use petzoo;
-
--- 修改数据库
-ALTER DATABASE PETSTORE character set gb2312 collate gb2312_chinese_ci;
-
--- 删除数据库
-DROP DATABASE yggl;
-DROP DATABASE IF EXISTS yggl;
-
 -- 浮点型
 CREATE TABLE `float_type` (
   `id` int(11) NOT NULL,
@@ -37,6 +15,7 @@ CREATE TABLE `float_type` (
   `n4` decimal(2,1) DEFAULT NULL COMMENT '定点数 decimal 保存一个精确的数值，不会发生数据的改变，不同于浮点数的四舍五入 将浮点数转换为字符串来保存，每9位数字保存为4个字节。',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 -- 整型
 CREATE TABLE `int_type` (
@@ -82,16 +61,6 @@ CREATE TABLE `datetime_type` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
--- 时区更改后，时间戳表示正确的时间，而不是日期时间。
--- 显示时区
- show variables like '%time_zone%';
---  设置时区
-set time_zone="america/new_york";
-select * from datetime_type;
--- 主要区别在于DATETIME是常数，而TIMESTAMP受time_zone设置影响。仅当您拥有（或将来可能拥有）跨时区的同步集群时，它才有意义。
---  您的应用程序不应依赖于服务器的时区。在发出任何查询之前，应用程序应始终在其使用的数据库连接会话中选择时区。
--- 如果多个用户（例如：webapp）之间共享连接，请使用UTC并在呈现端进行时区转换。
 insert into datetime_type(d1,d3) values ((now()),(now()));
 
 -- 枚举和集合
@@ -141,21 +110,14 @@ CREATE TABLE `engine6` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
- -- 修改表的存储引擎
-ALTER TABLE  enum_set_type ENGINE =INNODB;
 
 -- 创建库
--- CREATE DATABASE[ IF NOT EXISTS] 数据库名 数据库选项
+ CREATE DATABASE[ IF NOT EXISTS] 数据库名 数据库选项
 -- 数据库选项：
--- COLLATE collation_name-- 查看已有库
--- SHOW DATABASES[ LIKE 'PATTERN']-- 查看当前库信息
--- SHOW CREATE DATABASE 数据库名-- 修改库的选项信息
--- ALTER DATABASE 库名 选项信息-- 删除库
--- DROP DATABASE[ IF EXISTS] 数据库名
--- 同时删除该数据库相关的目录及其目录内容
+COLLATE collation_name
 CREATE DATABASE IF NOT EXISTS test1;
 
--- CREATE [TEMPORARY] TABLE[ IF NOT EXISTS] [库名.]表名 ( 表的结构定义 )[ 表选项]
+CREATE [TEMPORARY] TABLE[ IF NOT EXISTS] [库名.]表名 ( 表的结构定义 )[ 表选项]
 -- 每个字段必须有数据类型
 -- 最后一个字段后不能有逗号
 -- TEMPORARY 临时表，会话结束时表自动消失
@@ -179,17 +141,261 @@ create TEMPORARY TABLE book1
 )engine =InnoDB;
 
 -- 对于字段的定义：
--- 字段名 数据类型 [NOT NULL | NULL] [DEFAULT default_value] [AUTO_INCREMENT] [UNIQUE [KEY] | [PRIMARY] KEY] [COMMENT 'string']-- 表选项
+字段名 数据类型 [NOT NULL | NULL] [DEFAULT default_value] [AUTO_INCREMENT] [UNIQUE [KEY] | [PRIMARY] KEY] [COMMENT 'string']-- 表选项
 -- -- 字符集
--- CHARSET = charset_name
+CHARSET = charset_name
 -- 如果表没有设定，则使用数据库字符集
 
 
 -- 创建视图create view
--- CREATE VIEW 视图名(列1，列2...) AS SELECT (列1，列2...) FROM ...;
+CREATE VIEW 视图名(列1，列2...) AS SELECT (列1，列2...) FROM ...;
 -- 修改和创建视图
--- CREATE OR REPLACE VIEW 视图名 AS SELECT [...] FROM [...];
--- 查看表详情一样使用desc 视图名，另外一种方法是show fields from 视图名
+CREATE OR REPLACE VIEW 视图名 AS SELECT [...] FROM [...];
+
+
+-- 复制表
+create table if not exists book1 like book;
+
+create table if not exists book2  as select * from book where book.价格<3;
+-- default则用默认值 ignore违背唯一约束时，不执行该语句
+insert ignore into library.book
+values (2,default,22,4,null,"三毛","文艺出版社");
+
+-- 指定列名
+insert ignore into library.book(图书编号,图书类别, 价格, 数量, 作者1, 出版商)
+values (3,default,22,4,"三毛","文艺出版社");
+
+-- 指定参数
+insert into book set 图书编号=4,价格=12,图书类别=default,作者1="菲茨杰拉德";
+-- 插入多条
+insert ignore into library.book
+values (5,default,22,5,null,"三毛","文艺出版社"),
+       (6,default,22,3,null,"三毛","文艺出版社"),
+       (7,default,22,7,null,"三毛","文艺出版社"),
+       (8,default,22,4,null,"三毛","文艺出版社");
+
+-- 插入图片路径
+insert ignore into library.book
+values (9,default,22,4,"/usr/src/picture.jpg","三毛","文艺出版社");
+
+-- 插入图片
+insert ignore into library.book
+values (10,default,22,4,LOAD_FILE("/usr/src/picture.jpg"),"三毛","文艺出版社");
+-- 定义主键
+create table if not exists book_copy
+(
+    图书编号 char(10) not null primary key ,
+    封面图片 blob
+);
+-- 定义联合主键
+create table if not exists book_copy1
+(
+    图书编号 char(10) not null  ,
+    图书类别 varchar(20) not null default '未知',
+    单价 float(10) not null ,
+    数量 int(2),
+    封面图片 blob,
+    primary key (图书编号,图书类别)
+);
+-- 增加索引
+create table if not exists book_copy2
+(
+    图书编号 char(10) not null  ,
+    图书类别 varchar(20) not null default '未知',
+    单价 float(10) not null ,
+    数量 mediumint,
+    封面图片 blob,
+    primary key index_book(图书编号,图书类别)
+);
+
+-- 替代键约束
+create table if not exists book_copy3
+(
+    图书编号 char(10) not null unique ,
+    封面图片 blob
+);
+-- 定义替代键
+create table if not exists book_copy5
+(
+    图书编号 char(10) not null  ,
+    书名 varchar(30)not null ,
+    图书类别 varchar(20) not null default '未知',
+    单价 float(10) not null ,
+    封面图片 blob,
+    primary key (图书编号,图书类别),
+    unique(书名)
+);
+
+-- 创建外键约束
+create table if not exists book_ref
+(
+    图书编号 char(10) not null  ,
+    书名 varchar(20) not null default '未知',
+    出版日期 date null ,
+    primary key (书名),
+    foreign key (图书编号)
+        references book(图书编号)
+            on DELETE RESTRICT
+            on UPDATE RESTRICT
+)ENGINE =INNODB;
+
+-- 列完整性约束1
+create table if not exists student
+(
+    学号 char(6) not null,
+    性别 char(2) not null check ( 性别 in ('男','女') )
+);
+-- 列完整性约束2
+create table student1
+(
+    学号 char(6) not null,
+    出生日期 date not null ,
+    学分 smallint null ,
+    check ( 出生日期>'1980-01-01' )
+);
+
+-- 复杂表达式的列完整性约束
+create table student2
+(
+    学号 char(6) not null,
+    出生日期 date not null ,
+    学分 smallint null ,
+    check ( 学号 in (SELECT 学号 FROM student))
+);
+create table student3
+(
+    学号 char(6) not null,
+    最好成绩 smallint null ,
+    平均成绩 smallint null ,
+    check ( 最好成绩>=平均成绩)
+);
+INSERT [INTO] 表名 [(字段列表)] VALUES (值列表)[, (值列表), ...]
+-- 如果要插入的值列表包含所有字段并且顺序一致，则可以省略字段列表。
+-- 可同时插入多条数据记录！
+REPLACE 与 INSERT 完全一样，可互换。
+INSERT [INTO] 表名 SET 字段名=值[, 字段名=值, ...]
+PRIMARY 主键
+能唯一标识记录的字段，可以作为主键。
+一个表只能有一个主键。
+主键具有唯一性。
+声明字段时，用 primary key 标识。
+也可以在字段列表之后声明
+例：create table tab ( id int, stu varchar(10), primary key (id));
+主键字段的值不能为null。
+主键可以由多个字段共同组成。此时需要在字段列表后声明的方法。
+例：create table tab ( id int, stu varchar(10), age int, primary key (stu, age));
+
+UNIQUE 唯一索引（唯一约束）
+使得某字段的值也不能重复。
+NULL 约束
+null不是数据类型，是列的一个属性。
+表示当前列是否可以为null，表示什么都没有。
+null, 允许为空。默认。
+not null, 不允许为空。
+insert into tab values (null, 'val');
+-- 此时表示将第一个字段的值设为null, 取决于该字段是否允许为null
+DEFAULT 默认值属性
+当前字段的默认值。
+insert into tab values (default, 'val'); -- 此时表示强制使用默认值。
+create table tab ( add_time timestamp default current_timestamp );
+-- 表示将当前时间的时间戳设为默认值。
+current_date, current_time5. AUTO_INCREMENT 自动增长约束
+自动增长必须为索引（主键或unique）
+只能存在一个字段为自动增长。
+默认为1开始自动增长。可以通过表属性 auto_increment = x进行设置，或 alter table tbl auto_increment = x;
+COMMENT 注释
+例：create table tab ( id int ) comment '注释内容';
+FOREIGN KEY 外键约束
+用于限制主表与从表数据完整性。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- 主题：删
+
+-- 删除数据库
+DROP DATABASE yggl;
+DROP DATABASE IF EXISTS yggl;
+
+DELETE FROM 表名[ 删除条件子句]
+没有条件子句，则会删除全部
+delete from book where 数量<10;
+-- 同时删除多张表的记录
+delete ignore book,book_ref from book,book_ref
+where book_ref.图书编号=book_ref.图书编号
+and book.作者1='三毛';
+
+-- 同时删除多张表的记录
+delete from book,book_ref
+    using book,book_ref
+where book_ref.图书编号=book_ref.图书编号
+  and book.作者1='三毛';
+
+
+
+-- 删
+
+删除
+drop
+命令格式：drop table tb -- tb表示数据表的名字,下同。
+说明：删除内容和定义，释放空间。简单来说就是把整个表去掉.以后要新增数据是不可能的,除非新增一个表。
+-- 删除表
+drop table if exists book2;
+truncate
+删除内容、释放空间但不删除定义，也就是数据表的结构还在。与drop不同的是,它只是清空表数据而已。
+-- 没有参与索引和视图的表，可以用truncate快速删除表的所有记录 该方法无法恢复
+TRUNCATE book_copy1;
+1、truncate table 在功能上与不带 WHERE 子句的 delete语句相同，二者均删除表中的全部行，但 truncate 比 delete速度快，且使用的系统和事务日志资源少。
+2、delete 语句每次删除一行，并在事务日志中为所删除的每行记录一项，所以可以对delete操作进行roll back。
+3、truncate 在各种表上无论是大的还是小的都非常快。如果有ROLLBACK命令Delete将被撤销，而 truncate 则不会被撤销。
+4、truncate 是一个DDL语言，向其他所有的DDL语言一样，它将被隐式提交，不能对 truncate 使用ROLLBACK命令。
+5、truncate 将重新设置高水平线和所有的索引。在对整个表和索引进行完全浏览时，经过 truncate 操作后的表比Delete操作后的表要快得多。
+6、truncate 不能触发任何Delete触发器。
+7、当表被清空后表和表的索引讲重新设置成初始大小，而delete则不能。
+8、不能清空父表。
+delete
+命令格式：delete table tb 或 delete table tb where 条件
+说明：删除内容不删除定义，不释放空间。其中，delete table tb 虽然也是删除整个表的数据,但是过程是痛苦的(系统一行一行地删,效率较truncate低)。
+区别
+1，	truncate 是删除表再创建，delete 是逐条删除2，truncate 重置auto_increment的值。而delete不会3，truncate 不知道删除了几条，而delete知道。4，当被用于带分区的表时，truncate 会保留分区。
+
+-- 删除库
+DROP DATABASE[ IF EXISTS] 数据库名
+-- 同时删除该数据库相关的目录及其目录内容
+
+
+
+
+
+
+
+
+
+
+
+-- 主题：改
+
+-- 修改数据库
+ALTER DATABASE PETSTORE character set gb2312 collate gb2312_chinese_ci;
+
+
+-- 修改库的选项信息
+ALTER DATABASE 库名 选项信息
+--  设置时区
+set time_zone="america/new_york";
+
+ -- 修改表的存储引擎
+ALTER TABLE  enum_set_type ENGINE =INNODB;
 
 
 -- 增加列
@@ -214,13 +420,170 @@ Alter table book  change 单价 价格 float(9);
 Alter table book
     drop column 作者;
 
--- 复制表
-create table if not exists book1 like book;
+-- replace可以替换记录，不用考虑主键冲突 影响两行，插入一行，删除一行。
+replace into library.book
+values (2,default,16,4,null,"三毛","文艺出版社");
 
-create table if not exists book2  as select * from book where book.价格<3;
+-- 增加索引 改变主键
+alter table book_copy1
+    drop primary key ,
+add primary key(单价),
+    add unique u_idx(数量);
 
--- 删除表
-drop table if exists book2;
+-- 删除主键
+alter table book_copy1
+    drop primary key;
+
+-- 删除索引
+alter table book_copy1
+    drop primary key,
+    drop index u_idx;
+
+-- 增加外键约束
+ALTER TABLE book_ref
+add foreign key (图书编号)
+    references book_copy5(图书编号)
+    on DELETE CASCADE
+    on UPDATE CASCADE;
+
+
+
+-- 删除完整性约束
+ALTER TABLE book_copy5 DROP primary key ;
+
+ALTER TABLE book_ref DROP FOREIGN KEY book_ref_ibfk_2;
+
+/* Windows服务 */-- 启动MySQL
+net start mysql-- 创建Windows服务
+-- 断开服务器
+-- \q
+-- QUIT
+-- 
+-- 授权：
+GRANT ALL ON *.* TO 'root'@'%';
+-- 刷新权限：
+flush privileges;
+-- 更新加密规则：
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'password' PASSWORD EXPIRE NEVER;
+-- 更新root用户密码：
+ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456';
+
+-- 事务
+-- 事务开启
+START TRANSACTION; 
+-- 或者 
+BEGIN; 
+-- 开启事务后，所有被执行的SQL语句均被认作当前事务内的SQL语句。
+-- 事务提交
+COMMIT;
+-- 事务回滚 如果部分操作发生问题，映射到事务开启前。
+-- 数据定义语言（DDL）语句不能被回滚，比如创建或取消数据库的语句，和创建、取消或更改表或存储的子程序的语句。
+ROLLBACK;
+
+-- 设置一个事务保存点
+SAVEPOINT 保存点名称 
+-- 回滚到保存点
+ROLLBACK TO SAVEPOINT 保存点名称 
+ -- 删除保存点
+RELEASE SAVEPOINT 保存点名称
+
+-- InnoDB自动提交特性设置 0表示关闭自动提交，1表示开启自动提交。
+-- 如果关闭了，那普通操作的结果对其他客户端也不可见，需要commit提交后才能持久化数据操作。
+-- 也可以关闭自动提交来开启事务。但与START TRANSACTION不同的是，
+-- SET autocommit是永久改变服务器的设置，直到下次再次修改该设置。(针对当前连接)
+-- 而START TRANSACTION记录开启前的状态，而一旦事务提交或回滚后就需要再次开启事务。(针对当前事务)
+SET autocommit = 0|1; 
+SET autocommit = 1;
+-- 修改表
+-- 修改表本身的选项
+ALTER TABLE 表名 表的选项
+eg: ALTER TABLE 表名 ENGINE=MYISAM;
+-- 对表进行重命名
+RENAME TABLE 原表名 TO 新表名
+RENAME TABLE 原表名 TO 库名.表名 （可将表移动到另一个数据库）
+-- RENAME可以交换两个表名
+-- 修改表的字段机构（13.1.2. ALTER TABLE语法）
+ALTER TABLE 表名 操作名
+-- 操作名
+ADD[ COLUMN] 字段定义 -- 增加字段
+AFTER 字段名 -- 表示增加在该字段名后面
+FIRST -- 表示增加在第一个
+ADD PRIMARY KEY(字段名) -- 创建主键
+ADD UNIQUE [索引名] (字段名)-- 创建唯一索引
+ADD INDEX [索引名] (字段名) -- 创建普通索引
+DROP[ COLUMN] 字段名 -- 删除字段
+MODIFY[ COLUMN] 字段名 字段属性 -- 支持对字段属性进行修改，不能修改字段名(所有原有属性也需写上)
+CHANGE[ COLUMN] 原字段名 新字段名 字段属性 -- 支持对字段名修改
+DROP PRIMARY KEY -- 删除主键(删除主键前需删除其AUTO_INCREMENT属性)
+DROP INDEX 索引名 -- 删除索引
+DROP FOREIGN KEY 外键 -- 删除外键-- 删除表
+DROP TABLE[ IF EXISTS] 表名 ...-- 清空表数据
+TRUNCATE [TABLE] 表名-- 复制表结构
+CREATE TABLE 表名 LIKE 要复制的表名-- 复制表结构和数据
+CREATE TABLE 表名 [AS] SELECT * FROM 要复制的表名-- 检查表是否有错误
+CHECK TABLE tbl_name [, tbl_name] ... [option] ...-- 优化表
+OPTIMIZE [LOCAL | NO_WRITE_TO_BINLOG] TABLE tbl_name [, tbl_name] ...-- 修复表
+REPAIR [LOCAL | NO_WRITE_TO_BINLOG] TABLE tbl_name [, tbl_name] ... [QUICK] [EXTENDED] [USE_FRM]-- 分析表
+ANALYZE [LOCAL | NO_WRITE_TO_BINLOG] TABLE tbl_name [, tbl_name] ...
+-- 改
+UPDATE 表名 SET 字段名=新值[, 字段名=新值] [更新条件]
+SET character_set_client = gbk;
+SET character_set_results = gbk;
+SET character_set_connection = gbk;SET NAMES GBK; -- 相当于完成以上三个设置
+alter table t1 add constraint `t1_t2_fk` foreign key (t1_id) references t2(id);
+-- 将表t1的t1_id外键关联到表t2的id字段。
+-- 每个外键都有一个名字，可以通过 constraint 指定
+存在外键的表，称之为从表（子表），外键指向的表，称之为主表（父表）。
+作用：保持数据一致性，完整性，主要目的是控制存储在外键表（从表）中的数据。
+MySQL中，可以对InnoDB引擎使用外键约束：
+语法：
+foreign key (外键字段） references 主表名 (关联字段) [主表记录删除时的动作] [主表记录更新时的动作]
+此时需要检测一个从表的外键需要约束为主表的已存在的值。外键在没有关联的情况下，可以设置为null.前提是该外键列，没有not null。
+可以不指定主表记录更改或更新时的动作，那么此时主表的操作被拒绝。
+如果指定了 on update 或 on delete：在删除或更新时，有如下几个操作可以选择：
+1. cascade，级联操作。主表数据被更新（主键值更新），从表也被更新（外键值更新）。主表记录被删除，从表相关记录也被删除。
+2. set null，设置为null。主表数据被更新（主键值更新），从表的外键被设置为null。主表记录被删除，从表相关记录外键被设置成null。但注意，要求该外键列，没有not null属性约束。
+3. restrict，拒绝父表删除和更新。
+注意，外键只被InnoDB存储引擎所支持。其他引擎是不支持的。
+
+-- Update更新
+update aa set name=concat('x',name)
+
+
+
+
+
+
+
+-- 主题：查
+
+-- 查看数据库
+show DATABASES;
+
+-- 查看字符集和默认校对规则
+show character set;
+
+-- 查看版本
+-- mysql –V
+-- mysql
+SHOW VARIABLES LIKE '%version%';
+SELECT VERSION();
+
+-- 打开数据库
+use petzoo;
+
+
+
+-- 时区更改后，时间戳表示正确的时间，而不是日期时间。
+-- 显示时区
+ show variables like '%time_zone%';
+
+
+
+select * from datetime_type;
+-- 主要区别在于DATETIME是常数，而TIMESTAMP受time_zone设置影响。仅当您拥有（或将来可能拥有）跨时区的同步集群时，它才有意义。
+--  您的应用程序不应依赖于服务器的时区。在发出任何查询之前，应用程序应始终在其使用的数据库连接会话中选择时区。
+-- 如果多个用户（例如：webapp）之间共享连接，请使用UTC并在呈现端进行时区转换。
 
 -- 显示表信息
 show tables;
@@ -240,52 +603,6 @@ select * from library.book_ref as bookref,company.employee as user;
 select book.出版商,sell.订购者,sell.是否发货
 from book,sell
 where book.图书编号=sell.图书编号;
-
-delete from book where 数量<10;
-
--- 同时删除多张表的记录
-delete ignore book,book_ref from book,book_ref
-where book_ref.图书编号=book_ref.图书编号
-and book.作者1='三毛';
-
--- 同时删除多张表的记录
-delete from book,book_ref
-    using book,book_ref
-where book_ref.图书编号=book_ref.图书编号
-  and book.作者1='三毛';
-
-
--- 没有参与索引和视图的表，可以用truncate快速删除表的所有记录 该方法无法恢复
-TRUNCATE book_copy1;
-
--- default则用默认值 ignore违背唯一约束时，不执行该语句
-insert ignore into library.book
-values (2,default,22,4,null,"三毛","文艺出版社");
-
--- 指定列名
-insert ignore into library.book(图书编号,图书类别, 价格, 数量, 作者1, 出版商)
-values (3,default,22,4,"三毛","文艺出版社");
-
--- 指定参数
-insert into book set 图书编号=4,价格=12,图书类别=default,作者1="菲茨杰拉德";
--- replace可以替换记录，不用考虑主键冲突 影响两行，插入一行，删除一行。
-replace into library.book
-values (2,default,16,4,null,"三毛","文艺出版社");
-
--- 插入多条
-insert ignore into library.book
-values (5,default,22,5,null,"三毛","文艺出版社"),
-       (6,default,22,3,null,"三毛","文艺出版社"),
-       (7,default,22,7,null,"三毛","文艺出版社"),
-       (8,default,22,4,null,"三毛","文艺出版社");
-
--- 插入图片路径
-insert ignore into library.book
-values (9,default,22,4,"/usr/src/picture.jpg","三毛","文艺出版社");
-
--- 插入图片
-insert ignore into library.book
-values (10,default,22,4,LOAD_FILE("/usr/src/picture.jpg"),"三毛","文艺出版社");
 
 -- 如果book_ref的外键是book的图书编号，这个语句不会返回结果
 SELECT * FROM book_ref
@@ -341,126 +658,6 @@ between '1900-1-1' AND '2020-1-1';
 -- in
 select * from book_ref where 出版日期  not in ('1990-2-23' );
 
--- 定义主键
-create table if not exists book_copy
-(
-    图书编号 char(10) not null primary key ,
-    封面图片 blob
-);
--- 定义联合主键
-create table if not exists book_copy1
-(
-    图书编号 char(10) not null  ,
-    图书类别 varchar(20) not null default '未知',
-    单价 float(10) not null ,
-    数量 int(2),
-    封面图片 blob,
-    primary key (图书编号,图书类别)
-);
--- 增加索引
-create table if not exists book_copy2
-(
-    图书编号 char(10) not null  ,
-    图书类别 varchar(20) not null default '未知',
-    单价 float(10) not null ,
-    数量 mediumint,
-    封面图片 blob,
-    primary key index_book(图书编号,图书类别)
-);
-
--- 替代键约束
-create table if not exists book_copy3
-(
-    图书编号 char(10) not null unique ,
-    封面图片 blob
-);
--- 定义替代键
-create table if not exists book_copy5
-(
-    图书编号 char(10) not null  ,
-    书名 varchar(30)not null ,
-    图书类别 varchar(20) not null default '未知',
-    单价 float(10) not null ,
-    封面图片 blob,
-    primary key (图书编号,图书类别),
-    unique(书名)
-);
-
--- 增加索引 改变主键
-alter table book_copy1
-    drop primary key ,
-add primary key(单价),
-    add unique u_idx(数量);
-
--- 删除主键
-alter table book_copy1
-    drop primary key;
-
--- 删除索引
-alter table book_copy1
-    drop primary key,
-    drop index u_idx;
-
--- 创建外键约束
-create table if not exists book_ref
-(
-    图书编号 char(10) not null  ,
-    书名 varchar(20) not null default '未知',
-    出版日期 date null ,
-    primary key (书名),
-    foreign key (图书编号)
-        references book(图书编号)
-            on DELETE RESTRICT
-            on UPDATE RESTRICT
-)ENGINE =INNODB;
-
-
--- 增加外键约束
-ALTER TABLE book_ref
-add foreign key (图书编号)
-    references book_copy5(图书编号)
-    on DELETE CASCADE
-    on UPDATE CASCADE;
-
--- 列完整性约束1
-create table if not exists student
-(
-    学号 char(6) not null,
-    性别 char(2) not null check ( 性别 in ('男','女') )
-);
--- 列完整性约束2
-create table student1
-(
-    学号 char(6) not null,
-    出生日期 date not null ,
-    学分 smallint null ,
-    check ( 出生日期>'1980-01-01' )
-);
-
--- 复杂表达式的列完整性约束
-create table student2
-(
-    学号 char(6) not null,
-    出生日期 date not null ,
-    学分 smallint null ,
-    check ( 学号 in (SELECT 学号 FROM student))
-);
-create table student3
-(
-    学号 char(6) not null,
-    最好成绩 smallint null ,
-    平均成绩 smallint null ,
-    check ( 最好成绩>=平均成绩)
-);
-
--- 删除完整性约束
-ALTER TABLE book_copy5 DROP primary key ;
-
-ALTER TABLE book_ref DROP FOREIGN KEY book_ref_ibfk_2;
-
-/* Windows服务 */-- 启动MySQL
-net start mysql-- 创建Windows服务
-
 -- 登录账号
 -- mysql -uroot -p123456
 -- mysql -h47.107.225.159:3306 -uroot -p123456
@@ -471,49 +668,10 @@ SHOW VARIABLES -- 显示系统变量信息
 SELECT DATABASE();
 -- 显示当前时间、用户名、数据库版本
 SELECT now(), user(), version();
-
--- 断开服务器
--- \q
--- QUIT
--- 
--- 授权：
-GRANT ALL ON *.* TO 'root'@'%';
--- 刷新权限：
-flush privileges;
--- 更新加密规则：
-ALTER USER 'root'@'localhost' IDENTIFIED BY 'password' PASSWORD EXPIRE NEVER;
--- 更新root用户密码：
-ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '123456';
-
--- 事务
--- 事务开启
-START TRANSACTION; 
--- 或者 
-BEGIN; 
--- 开启事务后，所有被执行的SQL语句均被认作当前事务内的SQL语句。
--- 事务提交
-COMMIT;
--- 事务回滚 如果部分操作发生问题，映射到事务开启前。
--- 数据定义语言（DDL）语句不能被回滚，比如创建或取消数据库的语句，和创建、取消或更改表或存储的子程序的语句。
-ROLLBACK;
-
--- 设置一个事务保存点
-SAVEPOINT 保存点名称 
--- 回滚到保存点
-ROLLBACK TO SAVEPOINT 保存点名称 
- -- 删除保存点
-RELEASE SAVEPOINT 保存点名称
-
--- InnoDB自动提交特性设置 0表示关闭自动提交，1表示开启自动提交。
--- 如果关闭了，那普通操作的结果对其他客户端也不可见，需要commit提交后才能持久化数据操作。
--- 也可以关闭自动提交来开启事务。但与START TRANSACTION不同的是，
--- SET autocommit是永久改变服务器的设置，直到下次再次修改该设置。(针对当前连接)
--- 而START TRANSACTION记录开启前的状态，而一旦事务提交或回滚后就需要再次开启事务。(针对当前事务)
-SET autocommit = 0|1; 
-SET autocommit = 1;
-
-SHOW ENGINES -- 显示存储引擎的状态信息
-SHOW ENGINE 引擎名 {LOGS|STATUS} -- 显示存储引擎的日志或状态信息
+SHOW ENGINES 
+-- 显示存储引擎的状态信息
+SHOW ENGINE 引擎名 {LOGS|STATUS} 
+-- 显示存储引擎的日志或状态信息
 -- 自增起始数
 AUTO_INCREMENT = 行数
 -- 数据文件目录
@@ -523,115 +681,31 @@ INDEX DIRECTORY = '目录'
 -- 表注释
 COMMENT = 'string'
 -- 分区选项
-PARTITION BY ... (详细见手册)-- 查看所有表
+PARTITION BY ... (详细见手册)
+-- 查看所有表
 SHOW TABLES[ LIKE 'pattern']
-SHOW TABLES FROM 库名-- 查看表结构
+SHOW TABLES FROM 库名
+-- 查看表结构
 SHOW CREATE TABLE 表名 （信息更详细）
 DESC 表名 / DESCRIBE 表名 / EXPLAIN 表名 / SHOW COLUMNS FROM 表名 [LIKE 'PATTERN']
-SHOW TABLE STATUS [FROM db_name] [LIKE 'pattern']-- 修改表
--- 修改表本身的选项
-ALTER TABLE 表名 表的选项
-eg: ALTER TABLE 表名 ENGINE=MYISAM;
--- 对表进行重命名
-RENAME TABLE 原表名 TO 新表名
-RENAME TABLE 原表名 TO 库名.表名 （可将表移动到另一个数据库）
--- RENAME可以交换两个表名
--- 修改表的字段机构（13.1.2. ALTER TABLE语法）
-ALTER TABLE 表名 操作名
--- 操作名
-ADD[ COLUMN] 字段定义 -- 增加字段
-AFTER 字段名 -- 表示增加在该字段名后面
-FIRST -- 表示增加在第一个
-ADD PRIMARY KEY(字段名) -- 创建主键
-ADD UNIQUE [索引名] (字段名)-- 创建唯一索引
-ADD INDEX [索引名] (字段名) -- 创建普通索引
-DROP[ COLUMN] 字段名 -- 删除字段
-MODIFY[ COLUMN] 字段名 字段属性 -- 支持对字段属性进行修改，不能修改字段名(所有原有属性也需写上)
-CHANGE[ COLUMN] 原字段名 新字段名 字段属性 -- 支持对字段名修改
-DROP PRIMARY KEY -- 删除主键(删除主键前需删除其AUTO_INCREMENT属性)
-DROP INDEX 索引名 -- 删除索引
-DROP FOREIGN KEY 外键 -- 删除外键-- 删除表
-DROP TABLE[ IF EXISTS] 表名 ...-- 清空表数据
-TRUNCATE [TABLE] 表名-- 复制表结构
-CREATE TABLE 表名 LIKE 要复制的表名-- 复制表结构和数据
-CREATE TABLE 表名 [AS] SELECT * FROM 要复制的表名-- 检查表是否有错误
-CHECK TABLE tbl_name [, tbl_name] ... [option] ...-- 优化表
-OPTIMIZE [LOCAL | NO_WRITE_TO_BINLOG] TABLE tbl_name [, tbl_name] ...-- 修复表
-REPAIR [LOCAL | NO_WRITE_TO_BINLOG] TABLE tbl_name [, tbl_name] ... [QUICK] [EXTENDED] [USE_FRM]-- 分析表
-ANALYZE [LOCAL | NO_WRITE_TO_BINLOG] TABLE tbl_name [, tbl_name] ...
-
-INSERT [INTO] 表名 [(字段列表)] VALUES (值列表)[, (值列表), ...]
--- 如果要插入的值列表包含所有字段并且顺序一致，则可以省略字段列表。
--- 可同时插入多条数据记录！
-REPLACE 与 INSERT 完全一样，可互换。
-INSERT [INTO] 表名 SET 字段名=值[, 字段名=值, ...]-- 查
+SHOW TABLE STATUS [FROM db_name] [LIKE 'pattern']
+-- 查
 SELECT 字段列表 FROM 表名[ 其他子句]
 -- 可来自多个表的多个字段
 -- 其他子句可以不使用
--- 字段列表可以用*代替，表示所有字段-- 删
-DELETE FROM 表名[ 删除条件子句]
-没有条件子句，则会删除全部-- 改
-UPDATE 表名 SET 字段名=新值[, 字段名=新值] [更新条件]
-
+-- 字段列表可以用*代替，表示所有字段
 字符集编码
 /* 字符集编码 */ -------------------- MySQL、数据库、表、字段均可设置编码-- 数据编码与客户端编码不需一致
 SHOW VARIABLES LIKE 'character_set_%' -- 查看所有字符集编码项
 character_set_client 客户端向服务器发送数据时使用的编码
 character_set_results 服务器端将结果返回给客户端所使用的编码
 character_set_connection 连接层编码SET 变量名 = 变量值
-SET character_set_client = gbk;
-SET character_set_results = gbk;
-SET character_set_connection = gbk;SET NAMES GBK; -- 相当于完成以上三个设置-- 校对集
+-- 校对集
 校对集用以排序
 SHOW CHARACTER SET [LIKE 'pattern']/SHOW CHARSET [LIKE 'pattern'] 查看所有字符集
 SHOW COLLATION [LIKE 'pattern'] 查看所有校对集
 CHARSET 字符集编码 设置字符集编码
 COLLATE 校对集编码 设置校对集编码
-
-PRIMARY 主键
-能唯一标识记录的字段，可以作为主键。
-一个表只能有一个主键。
-主键具有唯一性。
-声明字段时，用 primary key 标识。
-也可以在字段列表之后声明
-例：create table tab ( id int, stu varchar(10), primary key (id));
-主键字段的值不能为null。
-主键可以由多个字段共同组成。此时需要在字段列表后声明的方法。
-例：create table tab ( id int, stu varchar(10), age int, primary key (stu, age));
-
-UNIQUE 唯一索引（唯一约束）
-使得某字段的值也不能重复。
-NULL 约束
-null不是数据类型，是列的一个属性。
-表示当前列是否可以为null，表示什么都没有。
-null, 允许为空。默认。
-not null, 不允许为空。
-insert into tab values (null, 'val');
--- 此时表示将第一个字段的值设为null, 取决于该字段是否允许为null
-DEFAULT 默认值属性
-当前字段的默认值。
-insert into tab values (default, 'val'); -- 此时表示强制使用默认值。
-create table tab ( add_time timestamp default current_timestamp );
--- 表示将当前时间的时间戳设为默认值。
-current_date, current_time5. AUTO_INCREMENT 自动增长约束
-自动增长必须为索引（主键或unique）
-只能存在一个字段为自动增长。
-默认为1开始自动增长。可以通过表属性 auto_increment = x进行设置，或 alter table tbl auto_increment = x;
-COMMENT 注释
-例：create table tab ( id int ) comment '注释内容';
-FOREIGN KEY 外键约束
-用于限制主表与从表数据完整性。
-alter table t1 add constraint `t1_t2_fk` foreign key (t1_id) references t2(id);
--- 将表t1的t1_id外键关联到表t2的id字段。
--- 每个外键都有一个名字，可以通过 constraint 指定
-存在外键的表，称之为从表（子表），外键指向的表，称之为主表（父表）。
-作用：保持数据一致性，完整性，主要目的是控制存储在外键表（从表）中的数据。
-MySQL中，可以对InnoDB引擎使用外键约束：
-语法：
-foreign key (外键字段） references 主表名 (关联字段) [主表记录删除时的动作] [主表记录更新时的动作]
-
-
-
 -- GROUP BY
 -- GROUP BY 字段/别名 [排序方式]
 -- 分组后会进行排序。升序：ASC，降序：DESC
@@ -681,18 +755,9 @@ select * from t1 where (id, gender) in (select id, gender from t2);
 -- exists 和 not exists 条件
 -- 如果子查询返回数据，则返回1或0。常用于判断条件。
 select column1 from t1 where exists (select * from t2);
-
-
-此时需要检测一个从表的外键需要约束为主表的已存在的值。外键在没有关联的情况下，可以设置为null.前提是该外键列，没有not null。
-可以不指定主表记录更改或更新时的动作，那么此时主表的操作被拒绝。
-如果指定了 on update 或 on delete：在删除或更新时，有如下几个操作可以选择：
-1. cascade，级联操作。主表数据被更新（主键值更新），从表也被更新（外键值更新）。主表记录被删除，从表相关记录也被删除。
-2. set null，设置为null。主表数据被更新（主键值更新），从表的外键被设置为null。主表记录被删除，从表相关记录外键被设置成null。但注意，要求该外键列，没有not null属性约束。
-3. restrict，拒绝父表删除和更新。
-注意，外键只被InnoDB存储引擎所支持。其他引擎是不支持的。
-
--- Update更新
-update aa set name=concat('x',name)
+-- 查看表详情一样使用desc 视图名，另外一种方法是show fields from 视图名
+desc 视图名
+show fields from 视图名
 
 FROM 子查询
 用于标识查询来源。
@@ -705,6 +770,10 @@ SELECT * FROM tb1, tb2;
 USE INDEX、IGNORE INDEX、FORCE INDEX
 
 
+-- 查看已有库
+ SHOW DATABASES[ LIKE 'PATTERN']
+ -- 查看当前库信息
+SHOW CREATE DATABASE 数据库名
 WHERE 子句
 -- 从from获得的数据源中进行筛选。
 -- 整型1表示真，0表示假。
@@ -824,27 +893,69 @@ SELECT `game_order_id`,`server_id`, `uid`,  `product_id`,  `order`.`channel`, `c
 						
 SELECT SUM(`order`.`money`),  `uid`, `server_id` FROM `orders` 
                 JOIN `order` ON orders.id=REPLACE(`order`.game_order_id,'inner_','') WHERE `order`.`order_id` not like 'dummy%'
-								GROUP BY `server_id`, `uid`;
+								GROUP BY `server_id`, `uid`
+内置函数
+数值函数
+abs(x) -- 绝对值 abs(-10.9) = 10
+format(x, d) -- 格式化千分位数值 format(1234567.456, 2) = 1,234,567.46
+ceil(x) -- 向上取整 ceil(10.1) = 11
+floor(x) -- 向下取整 floor (10.1) = 10
+round(x) -- 四舍五入去整
+mod(m, n) -- m%n m mod n 求余 10%3=1
+pi() -- 获得圆周率
+pow(m, n) -- m^n
+sqrt(x) -- 算术平方根
+rand() -- 随机数
+truncate(x, d) -- 截取d位小数
+时间日期函数
+now(), current_timestamp(); -- 当前日期时间
+current_date(); -- 当前日期
+current_time(); -- 当前时间
+date('yyyy-mm-dd hh:ii:ss'); -- 获取日期部分
+time('yyyy-mm-dd hh:ii:ss'); -- 获取时间部分
+date_format('yyyy-mm-dd hh:ii:ss', '%d %y %a %d %m %b %j'); -- 格式化时间
+unix_timestamp(); -- 获得unix时间戳
+from_unixtime(); -- 从时间戳获得时间
+字符串函数
+length(string) -- string长度，字节
+char_length(string) -- string的字符个数
+substring(str, position [,length]) -- 从str的position开始,取length个字符
+replace(str ,search_str ,replace_str) -- 在str中用replace_str替换search_str
+instr(string ,substring) -- 返回substring首次在string中出现的位置
+concat(string [,...]) -- 连接字串
+charset(str) -- 返回字串字符集
+lcase(string) -- 转换成小写
+left(string, length) -- 从string2中的左边起取length个字符
+load_file(file_name) -- 从文件读取内容
+locate(substring, string [,start_position]) -- 同instr,但可指定开始位置
+lpad(string, length, pad) -- 重复用pad加在string开头,直到字串长度为length
+ltrim(string) -- 去除前端空格
+repeat(string, count) -- 重复count次
+rpad(string, length, pad) -- 在str后用pad补充,直到长度为length
+rtrim(string) -- 去除后端空格
+strcmp(string1 ,string2) -- 逐字符比较两字串大小
+流程函数
+case when [condition] then result [when [condition] then result ...] [else result] end 多分支
+if(expr1,expr2,expr3) 双分支。
+-- 聚合函数
+count()sum();max();min();avg();
+group_concat()-- 其他常用函数
+md5();
+default();
 
-删除
-drop
-命令格式：drop table tb ---tb表示数据表的名字,下同。
-说明：删除内容和定义，释放空间。简单来说就是把整个表去掉.以后要新增数据是不可能的,除非新增一个表。
-truncate
-删除内容、释放空间但不删除定义，也就是数据表的结构还在。与drop不同的是,它只是清空表数据而已。
-1、truncate table 在功能上与不带 WHERE 子句的 delete语句相同，二者均删除表中的全部行，但 truncate 比 delete速度快，且使用的系统和事务日志资源少。
-2、delete 语句每次删除一行，并在事务日志中为所删除的每行记录一项，所以可以对delete操作进行roll back。
-3、truncate 在各种表上无论是大的还是小的都非常快。如果有ROLLBACK命令Delete将被撤销，而 truncate 则不会被撤销。
-4、truncate 是一个DDL语言，向其他所有的DDL语言一样，它将被隐式提交，不能对 truncate 使用ROLLBACK命令。
-5、truncate 将重新设置高水平线和所有的索引。在对整个表和索引进行完全浏览时，经过 truncate 操作后的表比Delete操作后的表要快得多。
-6、truncate 不能触发任何Delete触发器。
-7、当表被清空后表和表的索引讲重新设置成初始大小，而delete则不能。
-8、不能清空父表。
-delete
-命令格式：delete table tb 或 delete table tb where 条件
-说明：删除内容不删除定义，不释放空间。其中，delete table tb 虽然也是删除整个表的数据,但是过程是痛苦的(系统一行一行地删,效率较truncate低)。
-区别
-1，	truncate 是删除表再创建，delete 是逐条删除2，truncate 重置auto_increment的值。而delete不会3，truncate 不知道删除了几条，而delete知道。4，当被用于带分区的表时，truncate 会保留分区。
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 QL编程
 定义变量
@@ -931,47 +1042,7 @@ end while [end_label];- 如果需要在循环内提前终止 while循环，则�
 退出整个循环 leave
 退出当前循环 iterate
 通过退出的标签决定退出哪个循环--// 
-内置函数
-数值函数
-abs(x) -- 绝对值 abs(-10.9) = 10
-format(x, d) -- 格式化千分位数值 format(1234567.456, 2) = 1,234,567.46
-ceil(x) -- 向上取整 ceil(10.1) = 11
-floor(x) -- 向下取整 floor (10.1) = 10
-round(x) -- 四舍五入去整
-mod(m, n) -- m%n m mod n 求余 10%3=1
-pi() -- 获得圆周率
-pow(m, n) -- m^n
-sqrt(x) -- 算术平方根
-rand() -- 随机数
-truncate(x, d) -- 截取d位小数
-时间日期函数
-now(), current_timestamp(); -- 当前日期时间current_date(); -- 当前日期current_time(); -- 当前时间date('yyyy-mm-dd hh:ii:ss'); -- 获取日期部分time('yyyy-mm-dd hh:ii:ss'); -- 获取时间部分
-date_format('yyyy-mm-dd hh:ii:ss', '%d %y %a %d %m %b %j'); -- 格式化时间
-unix_timestamp(); -- 获得unix时间戳
-from_unixtime(); -- 从时间戳获得时间
-字符串函数
-length(string) -- string长度，字节
-char_length(string) -- string的字符个数substring(str, position [,length]) -- 从str的position开始,取length个字符
-replace(str ,search_str ,replace_str) -- 在str中用replace_str替换search_str
-instr(string ,substring) -- 返回substring首次在string中出现的位置
-concat(string [,...]) -- 连接字串
-charset(str) -- 返回字串字符集
-lcase(string) -- 转换成小写
-left(string, length) -- 从string2中的左边起取length个字符
-load_file(file_name) -- 从文件读取内容
-locate(substring, string [,start_position]) -- 同instr,但可指定开始位置
-lpad(string, length, pad) -- 重复用pad加在string开头,直到字串长度为length
-ltrim(string) -- 去除前端空格
-repeat(string, count) -- 重复count次
-rpad(string, length, pad) --在str后用pad补充,直到长度为length
-rtrim(string) -- 去除后端空格
-strcmp(string1 ,string2) -- 逐字符比较两字串大小
-流程函数
-case when [condition] then result [when [condition] then result ...] [else result] end 多分支
-if(expr1,expr2,expr3) 双分支。-- 聚合函数count()sum();max();min();avg();
-group_concat()-- 其他常用函数
-md5();
-default();--// 存储函数，自定义函数 ------------ 新建
+--  存储函数，自定义函数 ------------ 新建
 CREATE FUNCTION function_name (参数列表) RETURNS 返回值类型
 函数体
 函数名，应该合法的标识符，并且不应该与已有的关键字冲突。
@@ -979,10 +1050,13 @@ CREATE FUNCTION function_name (参数列表) RETURNS 返回值类型
 参数部分，由"参数名"和"参数类型"组成。多个参数用逗号隔开。
 函数体由多条可用的mysql语句，流程控制，变量声明等语句构成。
 多条语句应该使用 begin...end 语句块包含。
-一定要有 return 返回值语句。-- 删除
-DROP FUNCTION [IF EXISTS] function_name;-- 查看
+一定要有 return 返回值语句。
+-- 删除
+DROP FUNCTION [IF EXISTS] function_name;
+-- 查看
 SHOW FUNCTION STATUS LIKE 'partten'
-SHOW CREATE FUNCTION function_name;-- 修改
+SHOW CREATE FUNCTION function_name;
+-- 修改
 ALTER FUNCTION function_name 函数选项—
 
 存储过程，自定义功能 
